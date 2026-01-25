@@ -1,0 +1,30 @@
+description: Ultralytics YOLO11s model trained on dataset/mydataset/data.yaml
+author: Ultralytics
+date: '2025-12-04T10:31:01.665253'
+version: 8.3.18
+license: AGPL-3.0 License (https://ultralytics.com/license)
+docs: https://docs.ultralytics.com
+stride: 32
+task: detect
+batch: 1
+imgsz:
+- 416
+- 416
+names:
+  0: Oc_Anh_Vu
+  1: Oc_Ban_Tay
+  2: Oc_Ca_na
+  3: Oc_Do
+  4: Oc_Gai_Trang
+  5: Oc_Gai_Xuong_Rong
+  6: Oc_Giac
+  7: Oc_Giay
+  8: Oc_Hoang_Hau
+  9: Oc_Huong
+  10: Oc_Khe
+  11: Oc_Len
+  12: Oc_Mat_Trang
+  13: Oc_Mo
+  14: Oc_Mong_Tay
+  15: Oc_Muc
+  16: Oc_Toi
