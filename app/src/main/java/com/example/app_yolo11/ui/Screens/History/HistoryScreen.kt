@@ -12,9 +12,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.ImageNotSupported
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Waves
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -22,7 +24,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -32,6 +33,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,11 +48,6 @@ val OceanSurface = Color(0xFFF0F4F8)
 val TextPrimary = Color(0xFF102A43)
 val TextSecondary = Color(0xFF627D98)
 
-val MainGradientBrush = Brush.linearGradient(
-    colors = listOf(OceanGradientStart, OceanGradientEnd),
-    tileMode = TileMode.Clamp
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
@@ -58,6 +55,7 @@ fun HistoryScreen(
     viewModel: HistoryViewModel
 ) {
     val historyItems by viewModel.historyList.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
 
     Scaffold(
         containerColor = OceanSurface,
@@ -74,7 +72,6 @@ fun HistoryScreen(
                     )
                 },
                 navigationIcon = {
-
                     IconButton(onClick = { navController.popBackStack() }) {
                         Box(
                             modifier = Modifier
@@ -85,7 +82,7 @@ fun HistoryScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Quay lại",
+                                contentDescription = null,
                                 tint = TextPrimary,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -93,8 +90,7 @@ fun HistoryScreen(
                     }
                 },
                 actions = {
-                    if (historyItems.isNotEmpty()) {
-
+                    if (historyItems.isNotEmpty() || searchQuery.isNotEmpty()) {
                         IconButton(onClick = { viewModel.clearAll() }) {
                             Box(
                                 modifier = Modifier
@@ -104,14 +100,12 @@ fun HistoryScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.DeleteSweep,
-                                    contentDescription = "Xóa tất cả",
-                                    tint = Color(0xFFD32F2F), // Icon đỏ đậm
+                                    contentDescription = null,
+                                    tint = Color(0xFFD32F2F),
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
                         }
-                    } else {
-                        Spacer(modifier = Modifier.width(48.dp))
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -121,14 +115,42 @@ fun HistoryScreen(
             )
         }
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 20.dp)
         ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { viewModel.onSearchQueryChange(it) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                placeholder = { Text("Tìm tên ốc...", color = TextSecondary) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = OceanGradientStart) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.onSearchQueryChange("") }) {
+                            Icon(Icons.Default.Close, contentDescription = null, tint = TextSecondary)
+                        }
+                    }
+                },
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    focusedBorderColor = OceanGradientStart,
+                    unfocusedBorderColor = Color.Transparent,
+                ),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             if (historyItems.isEmpty()) {
-                ModernHistoryEmptyState()
+                val message = if (searchQuery.isNotEmpty()) "Không tìm thấy kết quả" else "Các loài ốc bạn đã xem sẽ xuất hiện tại đây."
+                ModernHistoryEmptyState(message)
             } else {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -153,7 +175,6 @@ fun HistoryScreen(
 fun ModernHistoryItem(snail: SeaSnails, onItemClick: (String) -> Unit) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(22.dp),
         modifier = Modifier
             .fillMaxWidth()
@@ -164,7 +185,6 @@ fun ModernHistoryItem(snail: SeaSnails, onItemClick: (String) -> Unit) {
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Card(
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.size(70.dp),
@@ -172,7 +192,6 @@ fun ModernHistoryItem(snail: SeaSnails, onItemClick: (String) -> Unit) {
             ) {
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                     if (snail.imageUrl.isNotEmpty()) {
-
                         AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current)
                                 .data(snail.imageUrl).crossfade(true).build(),
@@ -181,7 +200,6 @@ fun ModernHistoryItem(snail: SeaSnails, onItemClick: (String) -> Unit) {
                             modifier = Modifier.fillMaxSize(),
                             alpha = 0.3f
                         )
-
                         AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current)
                                 .data(snail.imageUrl).crossfade(true).build(),
@@ -213,13 +231,8 @@ fun ModernHistoryItem(snail: SeaSnails, onItemClick: (String) -> Unit) {
                     maxLines = 1
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .background(OceanGradientEnd, CircleShape)
-                    )
+                    Box(modifier = Modifier.size(6.dp).background(OceanGradientEnd, CircleShape))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = snail.scientificName,
@@ -231,20 +244,13 @@ fun ModernHistoryItem(snail: SeaSnails, onItemClick: (String) -> Unit) {
                     )
                 }
             }
-
-
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = Color.LightGray
-            )
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
         }
     }
 }
 
-
 @Composable
-fun ModernHistoryEmptyState() {
+fun ModernHistoryEmptyState(message: String) {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -254,7 +260,6 @@ fun ModernHistoryEmptyState() {
             modifier = Modifier
                 .size(100.dp)
                 .background(Color.White, CircleShape)
-                .border(2.dp, OceanSurface, CircleShape)
                 .shadow(8.dp, CircleShape, spotColor = Color.LightGray.copy(alpha = 0.5f)),
             contentAlignment = Alignment.Center
         ) {
@@ -265,22 +270,20 @@ fun ModernHistoryEmptyState() {
                 modifier = Modifier.size(50.dp)
             )
         }
-
         Spacer(modifier = Modifier.height(24.dp))
-
         Text(
-            text = "Lịch sử trống",
+            text = "Thông báo",
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
             color = TextPrimary
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Các loài ốc bạn đã xem sẽ xuất hiện tại đây.",
+            text = message,
             color = TextSecondary,
             fontSize = 14.sp,
             modifier = Modifier.padding(horizontal = 40.dp),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            textAlign = TextAlign.Center
         )
     }
 }
